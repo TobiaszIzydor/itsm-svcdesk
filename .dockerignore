@@ -1,0 +1,12 @@
+.git
+.github
+docs
+specs
+report.json
+checks.md
+*.md
+__pycache__
+*.pyc
+.venv
+data
+*.db
