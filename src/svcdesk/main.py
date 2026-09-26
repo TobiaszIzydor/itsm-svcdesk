@@ -25,6 +25,8 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from svcdesk.dora.router import router as dora_router
+
 WARSAW = ZoneInfo("Europe/Warsaw")
 OPENING = time(8, 0)
 CLOSING = time(16, 0)
@@ -198,6 +200,7 @@ class TicketIn(BaseModel):
 # --- app and error shape ------------------------------------------------------------------------
 
 app = FastAPI(title="svcdesk", docs_url=None, redoc_url=None, openapi_url=None)
+app.include_router(dora_router)  # Lab 2: POST /dora/metrics
 
 STATUS_CODES = {400: "bad_request", 404: "not_found", 405: "method_not_allowed", 409: "conflict"}
 
