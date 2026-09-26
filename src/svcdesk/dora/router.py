@@ -5,6 +5,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
 from svcdesk.dora.metrics import evaluate
+from svcdesk.dora.ticket_events import ticket_events
 from svcdesk.dora.validation import DoraError
 
 router = APIRouter()
@@ -28,3 +29,11 @@ async def dora_metrics(request: Request) -> JSONResponse:
         return JSONResponse(evaluate(body))
     except DoraError as exc:
         return error_response(exc)
+
+
+@router.get("/dora/ticket-events")
+def dora_ticket_events() -> JSONResponse:
+    # Imported here, not at the top: svcdesk.main imports this module while it is still being loaded.
+    from svcdesk.main import store
+
+    return JSONResponse(ticket_events(store.all()))
