@@ -1,0 +1,115 @@
+{
+  "uid": "svcdesk-lab3",
+  "title": "svcdesk - /kb/search",
+  "description": "RED and SLO view of GET /kb/search (slo.md: availability 99 %, latency 99 % within 0.35 s, 28d).",
+  "tags": ["svcdesk", "lab3", "slo"],
+  "timezone": "browser",
+  "schemaVersion": 41,
+  "version": 1,
+  "editable": true,
+  "refresh": "10s",
+  "time": {"from": "now-30m", "to": "now"},
+  "templating": {"list": []},
+  "annotations": {"list": []},
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Latency p50 / p95 / p99",
+      "description": "histogram_quantile over the designed ladder; the p99 lies in the slow mode of kb-index (0.21-0.30 s), resolved in 0.01 s buckets. Latency SLI threshold: 0.35 s.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 0},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 0.35}]},
+          "custom": {"thresholdsStyle": {"mode": "line"}}
+        },
+        "overrides": []
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "none"}},
+      "targets": [
+        {"refId": "A", "datasource": {"type": "prometheus", "uid": "prometheus"}, "legendFormat": "p50",
+         "expr": "histogram_quantile(0.5, sum by (le) (rate(http_server_request_duration_seconds_bucket{job=\"svcdesk\", http_route=\"/kb/search\"}[$__rate_interval])))"},
+        {"refId": "B", "datasource": {"type": "prometheus", "uid": "prometheus"}, "legendFormat": "p95",
+         "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{job=\"svcdesk\", http_route=\"/kb/search\"}[$__rate_interval])))"},
+        {"refId": "C", "datasource": {"type": "prometheus", "uid": "prometheus"}, "legendFormat": "p99",
+         "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_request_duration_seconds_bucket{job=\"svcdesk\", http_route=\"/kb/search\"}[$__rate_interval])))"}
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Requests per second by status code",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 0},
+      "fieldConfig": {"defaults": {"unit": "reqps", "custom": {"stacking": {"mode": "normal", "group": "A"}, "fillOpacity": 30}}, "overrides": []},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "none"}},
+      "targets": [
+        {"refId": "A", "datasource": {"type": "prometheus", "uid": "prometheus"}, "legendFormat": "{{http_response_status_code}}",
+         "expr": "sum by (http_response_status_code) (rate(http_server_request_duration_seconds_count{job=\"svcdesk\", http_route=\"/kb/search\"}[$__rate_interval]))"}
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Availability SLI (5m), objective 99 %",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 6, "w": 8, "x": 0, "y": 9},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit", "decimals": 3, "min": 0.9, "max": 1,
+          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 0.99}]}
+        },
+        "overrides": []
+      },
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "colorMode": "value", "graphMode": "area", "textMode": "auto"},
+      "targets": [
+        {"refId": "A", "datasource": {"type": "prometheus", "uid": "prometheus"}, "legendFormat": "availability",
+         "expr": "sum(rate(http_server_request_duration_seconds_count{job=\"svcdesk\", http_route=\"/kb/search\", http_response_status_code!~\"5..\"}[5m])) / sum(rate(http_server_request_duration_seconds_count{job=\"svcdesk\", http_route=\"/kb/search\"}[5m]))"}
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Latency SLI (5m): within 0.35 s, objective 99 %",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 6, "w": 8, "x": 8, "y": 9},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit", "decimals": 3, "min": 0.9, "max": 1,
+          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 0.99}]}
+        },
+        "overrides": []
+      },
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "colorMode": "value", "graphMode": "area", "textMode": "auto"},
+      "targets": [
+        {"refId": "A", "datasource": {"type": "prometheus", "uid": "prometheus"}, "legendFormat": "latency",
+         "expr": "sum(rate(http_server_request_duration_seconds_bucket{job=\"svcdesk\", http_route=\"/kb/search\", le=\"0.35\"}[5m])) / sum(rate(http_server_request_duration_seconds_count{job=\"svcdesk\", http_route=\"/kb/search\"}[5m]))"}
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Availability error-budget burn rate (1h and 5m)",
+      "description": "1 = the 28-day budget lasts exactly 28 days. KbSearchErrorsBurnFast pages at 14.4 (1h and 5m), KbSearchErrorsBurnSlow goes to chat at 6 (6h and 30m).",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 6, "w": 8, "x": 16, "y": 9},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none", "decimals": 2,
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 6}, {"color": "red", "value": 14.4}]},
+          "custom": {"thresholdsStyle": {"mode": "line"}}
+        },
+        "overrides": []
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "none"}},
+      "targets": [
+        {"refId": "A", "datasource": {"type": "prometheus", "uid": "prometheus"}, "legendFormat": "burn rate 1h",
+         "expr": "(sum(rate(http_server_request_duration_seconds_count{job=\"svcdesk\", http_route=\"/kb/search\", http_response_status_code=~\"5..\"}[1h])) or vector(0)) / sum(rate(http_server_request_duration_seconds_count{job=\"svcdesk\", http_route=\"/kb/search\"}[1h])) / (1 - 0.99)"},
+        {"refId": "B", "datasource": {"type": "prometheus", "uid": "prometheus"}, "legendFormat": "burn rate 5m",
+         "expr": "(sum(rate(http_server_request_duration_seconds_count{job=\"svcdesk\", http_route=\"/kb/search\", http_response_status_code=~\"5..\"}[5m])) or vector(0)) / sum(rate(http_server_request_duration_seconds_count{job=\"svcdesk\", http_route=\"/kb/search\"}[5m])) / (1 - 0.99)"}
+      ]
+    }
+  ]
+}
