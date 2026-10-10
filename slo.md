@@ -23,7 +23,7 @@ lab3_slo:
 
 # SLO for `GET /kb/search`
 
-All numbers below come from my own `load 3` runs on 10 October 2026 (login tobiaszizydor, 60 s open-loop at
+All numbers below come from my own `load 3` runs on 10 October 2026 (my own login's profile, 60 s open-loop at
 40 requests/s, three runs): q, the p99 of `/kb/search`, was 0.256 s, 0.259 s and 0.264 s; p50 37 ms, p95 76 ms,
 p99.9 282 ms, p99.99 294 ms; one 502 out of 2,399 responses in the run I used for the verdicts.
 

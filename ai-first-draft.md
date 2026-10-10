@@ -73,7 +73,7 @@ Upstream metric: It's worth adding a separate histogram for the upstream search 
 
 ## Verdict on the draft ladder
 
-My `load 3` run (login tobiaszizydor, 60 s open-loop at 40 requests/s, 10 October 2026) measured a p99 of
+My `load 3` run (my own login's profile, 60 s open-loop at 40 requests/s, 10 October 2026) measured a p99 of
 0.2591 s. The distribution has two modes: about 96.5 % of the requests finish in 13-100 ms (p50 37 ms, p95 76 ms),
 and the remaining 3.5 % sit in a narrow slow mode between 0.21 and 0.30 s. The p99 is inside that slow mode.
 
