@@ -26,6 +26,8 @@ from pydantic import BaseModel, ConfigDict, Field, StrictInt
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from svcdesk.dora.router import router as dora_router
+from svcdesk.kb import router as kb_router
+from svcdesk.telemetry import RequestMetricsMiddleware, router as metrics_router
 
 WARSAW = ZoneInfo("Europe/Warsaw")
 OPENING = time(8, 0)
@@ -201,6 +203,9 @@ class TicketIn(BaseModel):
 
 app = FastAPI(title="svcdesk", docs_url=None, redoc_url=None, openapi_url=None)
 app.include_router(dora_router)  # Lab 2: POST /dora/metrics
+app.include_router(kb_router)  # Lab 3: GET /kb/search
+app.include_router(metrics_router)  # Lab 3: GET /metrics
+app.add_middleware(RequestMetricsMiddleware)  # Lab 3: the one place that observes requests
 
 STATUS_CODES = {400: "bad_request", 404: "not_found", 405: "method_not_allowed", 409: "conflict"}
 
