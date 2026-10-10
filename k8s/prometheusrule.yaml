@@ -1,0 +1,57 @@
+# ai-generated: 70% - Claude Code wrapped my prometheus/alerts.yml groups in a PrometheusRule; the rules are mine
+# k8s/prometheusrule.yaml - the groups of prometheus/alerts.yml, unchanged, for kube-prometheus-stack (M-31).
+# Keep it in sync with prometheus/alerts.yml: same groups, same rules in the same order.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: svcdesk-slo
+  namespace: default
+  labels:
+    app: svcdesk
+spec:
+  groups:
+    - name: svcdesk-slo
+      rules:
+        # 14.4 x the budgeted rate: 2.1 % of the 28-day budget in one hour, all of it in about 47 hours. Pages.
+        - alert: KbSearchErrorsBurnFast
+          expr: |
+            (
+              sum(rate(http_server_request_duration_seconds_count{job="svcdesk", http_route="/kb/search", http_response_status_code=~"5.."}[1h]))
+                /
+              sum(rate(http_server_request_duration_seconds_count{job="svcdesk", http_route="/kb/search"}[1h]))
+            ) > 14.4 * (1 - 0.99)
+            and
+            (
+              sum(rate(http_server_request_duration_seconds_count{job="svcdesk", http_route="/kb/search", http_response_status_code=~"5.."}[5m]))
+                /
+              sum(rate(http_server_request_duration_seconds_count{job="svcdesk", http_route="/kb/search"}[5m]))
+            ) > 14.4 * (1 - 0.99)
+          for: 2m
+          labels:
+            service: svcdesk
+            slo: availability
+            severity: P1
+          annotations:
+            summary: "/kb/search: over 14.4 % of searches failing (1h and 5m); 28-day error budget gone in ~2 days. Check kb-index first."
+  
+        # 6 x the budgeted rate: 5.4 % of the budget in six hours, all of it in about 4.7 days. Goes to chat.
+        - alert: KbSearchErrorsBurnSlow
+          expr: |
+            (
+              sum(rate(http_server_request_duration_seconds_count{job="svcdesk", http_route="/kb/search", http_response_status_code=~"5.."}[6h]))
+                /
+              sum(rate(http_server_request_duration_seconds_count{job="svcdesk", http_route="/kb/search"}[6h]))
+            ) > 6 * (1 - 0.99)
+            and
+            (
+              sum(rate(http_server_request_duration_seconds_count{job="svcdesk", http_route="/kb/search", http_response_status_code=~"5.."}[30m]))
+                /
+              sum(rate(http_server_request_duration_seconds_count{job="svcdesk", http_route="/kb/search"}[30m]))
+            ) > 6 * (1 - 0.99)
+          for: 2m
+          labels:
+            service: svcdesk
+            slo: availability
+            severity: P2
+          annotations:
+            summary: "/kb/search: over 6 % of searches failing (6h and 30m); 28-day error budget gone in ~5 days. Fix in working hours."
