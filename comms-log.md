@@ -1,57 +1,69 @@
 ---
 lab4_comms:
-  awareness: TODO                 # NIS2: when you became aware of a significant incident (RFC 3339, in UTC)
-  detection: TODO                 # KSC: "od momentu jego wykrycia" - the moment of detection
-  classification: TODO            # DORA: when you classified it as a major ICT-related incident
+  awareness: 2026-10-12T07:12:00Z
+  detection: 2026-10-12T07:09:19Z
+  classification: 2026-10-12T08:00:00Z
   nis2:
-    early_warning_due: TODO       # awareness + 24 h
-    notification_due: TODO        # awareness + 72 h
-    notification_sent: TODO       # when your incident notification would go out
-    final_report_due: TODO        # one calendar month after notification_sent
+    early_warning_due: 2026-10-13T07:12:00Z
+    notification_due: 2026-10-15T07:12:00Z
+    notification_sent: 2026-10-13T09:00:00Z
+    final_report_due: 2026-11-13T09:00:00Z
   ksc:
-    early_warning_due: TODO       # detection + 24 h
-    notification_due: TODO        # detection + 72 h
-    notification_sent: TODO       # when your notification would go out
-    final_report_due: TODO        # one calendar month after notification_sent
+    early_warning_due: 2026-10-13T07:09:19Z
+    notification_due: 2026-10-15T07:09:19Z
+    notification_sent: 2026-10-13T09:00:00Z
+    final_report_due: 2026-11-13T09:00:00Z
   dora:
-    initial_due: TODO             # classification + 4 h, capped at awareness + 24 h when classified within those 24 h
-    initial_sent: TODO            # when your initial notification would go out
-    intermediate_due: TODO        # initial_sent + 72 h
-    intermediate_sent: TODO       # when your intermediate report would go out
-    final_due: TODO               # one calendar month after intermediate_sent
-  log:                            # at least three communications: when, to whom, what
-    - {at: TODO, to: TODO, what: TODO}
-    - {at: TODO, to: TODO, what: TODO}
-    - {at: TODO, to: TODO, what: TODO}
+    initial_due: 2026-10-12T12:00:00Z
+    initial_sent: 2026-10-12T11:00:00Z
+    intermediate_due: 2026-10-15T11:00:00Z
+    intermediate_sent: 2026-10-14T10:00:00Z
+    final_due: 2026-11-14T10:00:00Z
+  log:
+    - {at: 2026-10-12T11:00:00Z, to: the financial supervisor, what: DORA initial notification}
+    - {at: 2026-10-12T12:00:00Z, to: the CSIRT, what: NIS2 and KSC early warning}
+    - {at: 2026-10-13T09:00:00Z, to: the CSIRT, what: NIS2 and KSC incident notification}
+    - {at: 2026-10-14T10:00:00Z, to: the financial supervisor, what: DORA intermediate report}
 ---
-<!-- ai-generated: ??% - TODO replace ?? with a number and say in one line how this file was written -->
+<!-- ai-generated: 70% - the three instants and the sending times are my decisions; Claude Code did the deadline arithmetic and drafted the prose -->
 
 # Communications log: the regulators' clocks
 
-Stretch 2 (`L4-STRETCH-2.01`, INCIDENT-SPEC.md I-30). Copy this file to `comms-log.md` at your repository root and
-replace every `TODO`. Suppose the shop is an entity that NIS2, the Polish KSC act and DORA all apply to (Lecture 4
-slide 21), and that your incident was significant under the first two and major under the third.
-
-- Write every instant in UTC with `Z`. The checker compares instants, so another offset is not wrong, but Warsaw
-  leaves summer time in the night after the lab (25 October 2026, 03:00 CEST becomes 02:00 CET), and 24 hours after
-  a Saturday noon in Warsaw is not Sunday noon on a Warsaw clock.
-- The three instants you defend (`awareness`, `detection`, `classification`) and the four `*_sent` instants are
-  your choice; the eight deadlines follow from them by the rule, and the checker recomputes each one (within one
-  minute).
-- Hours are elapsed hours. "One calendar month after" is the same day and time of the next month on the UTC calendar,
-  or that month's last day when it is shorter: a month after 2026-10-31T09:00:00Z is 2026-11-30T09:00:00Z.
-- INCIDENT-SPEC.md section 4.7 has a worked example. The weekend relief of the DORA technical standard (Art. 5(4))
-  is ignored.
-
-Delete these instructions when you write the file.
+The shop is assumed to fall under NIS2, the Polish KSC act and DORA at once, with this incident significant under the
+first two and major under the third. Every instant is UTC; the incident is the one of `postmortem.md`, on Monday
+12 October 2026.
 
 ## The three instants you defend
 
-TODO: which instant of your incident you call the awareness of a significant incident (NIS2), which the detection
-(KSC), and which the classification as major (DORA), and why each is that instant - with the timestamps of your
-postmortem, and what you knew at each.
+**Detection (KSC), 07:09:19Z.** KSC counts "od momentu jego wykrycia", from the moment of detection, and the incident
+was detected when ShopCheckoutErrors fired and paged the on-call at 07:09:19Z (MTTD 214 s after the onset). That is
+the first moment anyone in the organisation had a signal; it does not wait for a human to understand it, so it is
+the earliest and most conservative of the three clocks: the KSC early warning is due at 07:09:19Z on Tuesday.
+
+**Awareness (NIS2), 07:12:00Z.** NIS2 starts its clock when the entity "becomes aware" of a *significant* incident,
+which needs more than a page: someone must know that users are affected. At 07:10:07Z the on-call acknowledged the
+ticket; by about 07:11 the AI-assisted investigation had shown that the checkout errors came from the product
+catalog (H2, 0.096 failed GetProduct calls per second), that orders were being lost and that product pages failed
+too. At 07:12:00Z, with that impact on paying customers clear, the on-call judged the incident significant. Claiming
+a later instant would only be safe if it could be defended, and here it could not: nothing more was learned after
+07:12 that changed the judgement.
+
+**Classification (DORA), 08:00:00Z.** Classifying a major ICT-related incident applies the criteria of the DORA
+technical standard (clients affected, duration, reputational and economic impact, critical services), which is a
+deliberate decision of the incident manager, not of the on-call alone. With the incident over at 07:12:19Z and the
+postmortem numbers at hand (about 2 of 64 orders failed, 4 % of front-end requests), the classification meeting at
+08:00:00Z is less than an hour after awareness, a realistic and defensible delay.
 
 ## The log
 
-TODO: the communications of the front matter in prose or as a table - who was told what, when, and which clock each
-one answers.
+| when (UTC) | to | what | which clock |
+|---|---|---|---|
+| Mon 2026-10-12 11:00 | the financial supervisor | DORA initial notification | due 12:00: classification + 4 h, earlier than awareness + 24 h (Tue 07:12) |
+| Mon 2026-10-12 12:00 | the CSIRT | NIS2 and KSC early warning | due Tue 07:09:19 (KSC, detection + 24 h) and Tue 07:12 (NIS2, awareness + 24 h) |
+| Tue 2026-10-13 09:00 | the CSIRT | NIS2 and KSC incident notification | due Thu 07:09:19 (KSC) and Thu 07:12 (NIS2), + 72 h; final reports due one month later, 2026-11-13 09:00 |
+| Wed 2026-10-14 10:00 | the financial supervisor | DORA intermediate report | due Thu 11:00, initial + 72 h; the final report is due 2026-11-14 10:00 |
+
+The DORA initial notification goes first, an hour before its deadline, because DORA's 4-hour clock is the shortest
+one. The early warning to the CSIRT goes out the same day, well inside both 24-hour clocks, so that neither depends
+on the other: KSC's runs from detection and is three minutes earlier than NIS2's. The full notification follows the
+next working morning, when the postmortem's numbers are checked, still two days before its 72-hour deadline.
