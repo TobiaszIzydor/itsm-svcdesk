@@ -1,55 +1,50 @@
 {
-  "_comment": "The AI ledger (INCIDENT-SPEC.md section 4.6, I-23 to I-28; checks L4-CORE-5.01 to 5.06). Copy it to ai-rca-eval.json at your repository root (Stretch 1: a second copy, ai-rca-eval-2.json). `investigator.transcript` is the path of the saved transcript inside your repository, at least 200 bytes. One entry per hypothesis the agent stated, at least three, with unique ids. `hypothesis` is the agent's own words copied from the transcript (runs of spaces and line breaks may differ, nothing else may). The four entries below show the four shapes, one per verdict; their hypotheses are placeholders and their queries are examples on the shop's span metrics: replace every entry with your own. `predicts` is a PromQL comparison that returns something exactly when the prediction holds (no `bool`, no seeded_* series); the checker runs it at `at` (an instant inside your incident, in UTC) and 5 minutes before the onset. `result` is what it returned at `at`: true for a non-empty result. correct and partially_correct need true at `at` and nothing on the baseline, and their `component` is one service name exactly as in INCIDENT-SPEC.md section 2.2; hallucinated needs false at `at`; an unfalsifiable entry has `predicts`, `at` and `result` null and says in `why_no_query` (at least 40 characters) why no query could test it. `evidence` is read, not checked. Delete this comment and every other `_comment`.",
   "investigator": {
-    "agent": "TODO: e.g. gemini-cli 0.61.0, or the course agent loop agent.py",
-    "model": "TODO: e.g. gemini-3.8-flash, or qwen3:1.7b",
+    "agent": "course agent loop agent.py (recorded investigator)",
+    "model": "qwen3:4b-instruct",
     "mcp_server": "prom_mcp.py (mcp 2.2.0)",
     "transcript": "ai-rca/transcript.md"
   },
   "hypotheses": [
     {
-      "_comment": "correct: the prediction held against the data. Evidence: the query, and its result.",
       "id": "H1",
-      "hypothesis": "TODO: the agent's words, copied from the transcript",
-      "component": "payment",
-      "predicts": "sum(rate(traces_span_metrics_calls_total{service_name=\"payment\", span_kind=\"SPAN_KIND_SERVER\", status_code=\"STATUS_CODE_ERROR\"}[5m])) > 0.05",
-      "at": "2026-10-24T10:52:00Z",
+      "hypothesis": "The checkout error is directly tied to failed requests in the `oteldemo.CheckoutService/PlaceOrder` span, as it shows a consistent count of 2 erroneous calls from 07:00Z to 07:20Z.",
+      "component": "checkout",
+      "predicts": "sum(rate(traces_span_metrics_calls_total{service_name=\"checkout\", span_kind=\"SPAN_KIND_SERVER\", span_name=\"oteldemo.CheckoutService/PlaceOrder\", status_code=\"STATUS_CODE_ERROR\"}[5m])) > 0",
+      "at": "2026-10-12T07:11:30Z",
       "result": true,
       "verdict": "correct",
-      "evidence": "TODO: what the query returned at `at` (for example 0.21 failed calls per second), and that it returned nothing 5 minutes before the onset"
+      "evidence": "0.0070 failed PlaceOrder calls per second at 07:11:30; nothing 5 minutes before the onset (07:00:45), so the errors belong to the fault. The claim is right but adds nothing to what the page already said: ShopCheckoutErrors had fired on exactly these checkout errors."
     },
     {
-      "_comment": "partially_correct: the right component, the wrong mechanism or time. Evidence: the query that splits the two - here `A unless B`: true when the component's latency rose (A, the part that held) and its errors did not (B, the part the agent got wrong).",
       "id": "H2",
-      "hypothesis": "TODO: the agent's words, copied from the transcript",
+      "hypothesis": "The error originates from downstream failures in `oteldemo.ProductCatalogService/GetProduct`, which may be causing the checkout service to fail during order placement.",
       "component": "product-catalog",
-      "predicts": "histogram_quantile(0.99, sum by (le) (rate(traces_span_metrics_duration_milliseconds_bucket{service_name=\"product-catalog\", span_kind=\"SPAN_KIND_SERVER\"}[5m]))) > 1000 unless on() sum(rate(traces_span_metrics_calls_total{service_name=\"product-catalog\", span_kind=\"SPAN_KIND_SERVER\", status_code=\"STATUS_CODE_ERROR\"}[5m])) > 0.05",
-      "at": "2026-10-24T10:55:00Z",
+      "predicts": "sum(rate(traces_span_metrics_calls_total{service_name=\"product-catalog\", span_kind=\"SPAN_KIND_SERVER\", status_code=\"STATUS_CODE_ERROR\"}[5m])) > 0.05",
+      "at": "2026-10-12T07:11:30Z",
       "result": true,
-      "verdict": "partially_correct",
-      "evidence": "TODO: which part held and which did not, with what each part of the query returned"
+      "verdict": "correct",
+      "evidence": "product-catalog itself answered 0.096 failed GetProduct calls per second at 07:11:30 and none at 07:00:45: the checkout errors come from the catalog downstream, the one hypothesis that points beyond the alert towards the cause."
     },
     {
-      "_comment": "hallucinated: the data says otherwise. Evidence: the query that contradicts it. The metric must exist in your snapshot: a query on a name nobody exports returns nothing whatever happened, and proves nothing.",
       "id": "H3",
-      "hypothesis": "TODO: the agent's words, copied from the transcript",
-      "component": "cart",
-      "predicts": "sum(rate(traces_span_metrics_calls_total{service_name=\"cart\", span_kind=\"SPAN_KIND_SERVER\", status_code=\"STATUS_CODE_ERROR\"}[5m])) > 0.01",
-      "at": "2026-10-24T10:52:00Z",
+      "hypothesis": "The error is likely propagated from a failing `PaymentService/Charge` step in the checkout flow, as payment failures commonly cause user checkout errors.",
+      "component": "payment",
+      "predicts": "sum(rate(traces_span_metrics_calls_total{service_name=\"payment\", span_kind=\"SPAN_KIND_SERVER\", status_code=\"STATUS_CODE_ERROR\"}[5m])) > 0",
+      "at": "2026-10-12T07:11:30Z",
       "result": false,
       "verdict": "hallucinated",
-      "evidence": "TODO: what the data shows instead, for example cart's failed calls at `at`"
+      "evidence": "Nothing at 07:11:30 although payment was serving 0.11 Charge calls per second, the same as before the onset: payment had traffic and no failed spans, so the data contradicts a failing PaymentService/Charge. The agent never ran its own query for it."
     },
     {
-      "_comment": "unfalsifiable: no query could prove it wrong. Evidence: none - that is the verdict. A hypothesis that names a service and a signal is testable: write its query instead, even if nobody has run it yet.",
       "id": "H4",
-      "hypothesis": "TODO: the agent's words, copied from the transcript",
-      "component": null,
-      "predicts": null,
-      "at": null,
-      "result": null,
-      "verdict": "unfalsifiable",
-      "why_no_query": "TODO: why no query could prove it wrong - it names no service, no signal and no time"
+      "hypothesis": "A system-wide spike in errors could be due to high load or a resource bottleneck, inferred from the error counts growing steadily over the 20-minute window.",
+      "component": "frontend",
+      "predicts": "sum(rate(traces_span_metrics_calls_total{service_name=\"frontend\", span_kind=\"SPAN_KIND_SERVER\"}[5m])) > 6",
+      "at": "2026-10-12T07:11:30Z",
+      "result": false,
+      "verdict": "hallucinated",
+      "evidence": "Nothing at 07:11:30: the frontend served 3.8 requests per second against 4.3 at 07:00:45, no spike of load (a flood would be about x15), and the error count it cites is a cumulative counter that stays at 2, not a growing one. The agent read a counter as a trend and did not go beyond the alert."
     }
   ]
 }
