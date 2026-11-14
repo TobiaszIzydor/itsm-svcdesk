@@ -3,3 +3,6 @@
 # would then see every file as modified, and `itsmlab verify` would report the commit as "(dirty)".
 # LF also keeps shell scripts and Dockerfiles you add working inside Linux containers.
 * text=auto eol=lf
+
+# Lab 5: the canary SARIF is evidence, byte for byte as the run produced it (P-26): never convert it.
+bakeoff/sarif/*.sarif -text
