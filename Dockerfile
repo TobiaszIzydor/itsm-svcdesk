@@ -1,11 +1,16 @@
 # svcdesk image: Python 3.13, dependencies installed at build time (no network at run time, API.md section 9).
-FROM python:3.13-slim
+# Lab 5 triage (TRIAGE.md): the base image is pinned by digest (python:3.13-slim of 14 November 2026), the Debian
+# packages are upgraded at build time, and pip is removed after the install - it is needed only to install, and its
+# vendored copies of msgpack, urllib3 and pkg_resources carry fixed CVEs that no pip release ships yet.
+FROM python:3.13-slim@sha256:e48f59cdba69a3cbd9ed2cf0f348d90d45a8d350d98134cf1070bc106ee9ed90
+
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Dependencies first, so Docker caches this layer while the code changes.
 COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt && pip uninstall -y pip
 
 COPY src/ /app/src/
 
