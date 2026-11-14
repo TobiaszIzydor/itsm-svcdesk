@@ -1,0 +1,40 @@
+# ai-generated: 80% - Claude Code wrote the rules and tests from my two decisions about svcdesk (upstream calls from handlers, swallowed exceptions)
+rules:
+  - id: svcdesk-upstream-call-in-handler
+    languages: [python]
+    severity: INFO
+    message: >-
+      An upstream call from a request handler. Every one is timed by the RED histogram and must keep the M-02
+      contract: exactly one call per request, no retry, no cache, an explicit timeout of at least 2 s, and a plain
+      `def` handler so that the blocking call runs in the threadpool.
+    patterns:
+      - pattern: urllib.request.urlopen(...)
+      - pattern-either:
+          - pattern-inside: |
+              @$ROUTER.$METHOD(...)
+              def $HANDLER(...):
+                  ...
+          - pattern-inside: |
+              @$ROUTER.$METHOD(...)
+              async def $HANDLER(...):
+                  ...
+
+  - id: svcdesk-swallowed-exception
+    languages: [python]
+    severity: WARNING
+    message: >-
+      `except Exception` without a re-raise turns every bug in the try block into the same answer. In svcdesk an
+      unexpected error must reach the 500 handler (and be counted as 500 by the metrics middleware); catch the
+      specific exceptions you expect instead, or re-raise.
+    patterns:
+      - pattern: |
+          try:
+              ...
+          except Exception:
+              ...
+      - pattern-not: |
+          try:
+              ...
+          except Exception:
+              ...
+              raise

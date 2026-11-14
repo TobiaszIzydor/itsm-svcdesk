@@ -3,3 +3,6 @@
 # <file>:<rule id>:<line>, as the gate's log prints it). The ignore-policy job enforces CI-SPEC.md P-06: directly above
 # every entry, '#' lines of your own giving the reason, at least 20 characters in total. Leave the blank line below.
 
+# Lab 3 evidence: raw kubectl output of kube-prometheus-stack; line 5320 is the Helm pod annotation
+# checksum/secret, a SHA-256 of the chart's rendered Secret, not a credential. The file must stay as captured.
+k8s/evidence.json:generic-api-key:5320
